@@ -13,15 +13,15 @@ struct Node {
 
 int height(Node* node) {
     if (node == nullptr) {
-        return -1;  // Return -1 for missing nodes
+        return 0;
     }
     else {
         int leftHeight = height(node->left);
         int rightHeight = height(node->right);
+
         return (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
     }
 }
-
 Node* createTreeFromUserInput(int depth, const std::string& direction = "корневой") {
     if (depth > 0) {
         Node* node = new Node;
@@ -32,16 +32,23 @@ Node* createTreeFromUserInput(int depth, const std::string& direction = "корнево
             return nullptr;
         }
         else {
-            node->right = createTreeFromUserInput(depth - 1, "правого");  // Right child is created first
-            node->left = createTreeFromUserInput(depth - 1, "левого");  // Left child is created second
-            int leftHeight = (node->left != nullptr) ? height(node->left) : -1;  // Get height of left subtree, or -1 if it doesn't exist
-            int rightHeight = (node->right != nullptr) ? height(node->right) : -1;  // Get height of right subtree, or -1 if it doesn't exist
-            node->value = abs(leftHeight - rightHeight);  // Store height difference in node
+            node->right = createTreeFromUserInput(depth - 1, "правого");  // Right child is created second
+            node->left = createTreeFromUserInput(depth - 1, "левого");  // Left child is created first
             return node;
         }
     }
     else {
         return nullptr;
+    }
+}
+
+void calculateHeightDifferences(Node* node) {
+    if (node != nullptr) {
+        int leftHeight = height(node->left);
+        int rightHeight = height(node->right);
+        node->value = abs(leftHeight - rightHeight);
+        calculateHeightDifferences(node->left);
+        calculateHeightDifferences(node->right);
     }
 }
 
@@ -52,7 +59,6 @@ void fillMatrix(Node* node, int depth, int pos, int(&matrix)[MAX_DEPTH][MAX_NODE
         fillMatrix(node->right, depth + 1, pos * 2 + 1, matrix);
     }
 }
-
 void printMatrix(int(&matrix)[MAX_DEPTH][MAX_NODES]) {
     for (int i = 0; i < MAX_DEPTH; ++i) {
         for (int j = 0; j < (1 << (MAX_DEPTH - i - 1)); ++j) {
@@ -60,17 +66,28 @@ void printMatrix(int(&matrix)[MAX_DEPTH][MAX_NODES]) {
         }
         for (int j = 0; j < (1 << i); ++j) {
             std::cout << matrix[i][j];  // Print -1 where there is no node
-            for (int k = 0; k < (1 << (MAX_DEPTH - i)) - 1; ++k) {
-                std::cout << "  ";
+            if (j < (1 << i) - 1) {  // Only print spaces between values, not after the last value
+                for (int k = 0; k < (1 << (MAX_DEPTH - i)) - 1; ++k) {
+                    std::cout << "  ";
+                }
             }
         }
         std::cout << "\n";
     }
 }
 
+void deleteTree(Node* node) {
+    if (node != nullptr) {
+        deleteTree(node->left);
+        deleteTree(node->right);
+        delete node;
+    }
+}
+
 int main() {
     setlocale(LC_ALL, "Russian");
     Node* tree = createTreeFromUserInput(MAX_DEPTH);  // Create a tree from user input with depth MAX_DEPTH
+    calculateHeightDifferences(tree);  // Calculate height differences after the tree has been created
 
     int matrix[MAX_DEPTH][MAX_NODES];
     for (int i = 0; i < MAX_DEPTH; ++i) {
@@ -81,6 +98,6 @@ int main() {
 
     fillMatrix(tree, 0, 0, matrix);
     printMatrix(matrix);
-
+    deleteTree(tree);
     return 0;
 }
