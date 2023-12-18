@@ -1,43 +1,59 @@
 #include <iostream>
+#include <memory>
 
+// Определение структуры узла
 struct Node {
-    int data;
-    Node* left;
-    Node* right;
+    int key;
+    std::unique_ptr<Node> left;
+    std::unique_ptr<Node> right;
+    Node(int key) : key(key), left(nullptr), right(nullptr) {}
 };
 
-Node* newNode(int data) {
-    Node* node = new Node;
-    node->data = data;
-    node->left = NULL;
-    node->right = NULL;
+// Функция для печати дерева
+void printTree(const std::unique_ptr<Node>& node, const std::string& prefix = "", bool isLeft = true) {
+    if (!node) return;
+    std::cout << prefix;
+    std::cout << (isLeft ? "|-- " : "\\-- ");
+    std::cout << node->key << std::endl;
+    printTree(node->left, prefix + (isLeft ? "|   " : "    "), true);
+    printTree(node->right, prefix + (isLeft ? "|   " : "    "), false);
+}
+
+// Функция для создания узла
+std::unique_ptr<Node> createNode() {
+    int key;
+    std::cout << "Введите ключ для узла (или -1 для завершения): ";
+    std::cin >> key;
+    if (key == -1) return nullptr;
+    std::unique_ptr<Node> node = std::make_unique<Node>(key);
+    std::cout << "Создание левого потомка узла " << key << std::endl;
+    node->left = createNode();
+    std::cout << "Создание правого потомка узла " << key << std::endl;
+    node->right = createNode();
     return node;
 }
 
-void printTreeStructure(Node* node, int space) {
-    if (node == NULL)
+// Функция для удаления поддерева с заданным ключом
+void deleteSubtree(std::unique_ptr<Node>& node, int key) {
+    if (node == nullptr) {
         return;
-
-    space += 10;
-
-    printTreeStructure(node->right, space);
-
-    std::cout << std::endl;
-    for (int i = 10; i < space; i++)
-        std::cout << " ";
-    std::cout << node->data << "\n";
-
-    printTreeStructure(node->left, space);
+    }
+    if (node->key == key) {
+        node.reset();
+        return;
+    }
+    deleteSubtree(node->left, key);
+    deleteSubtree(node->right, key);
 }
 
 int main() {
-    Node* root = newNode(1);
-    root->left = newNode(2);
-    root->right = newNode(3);
-    root->left->left = newNode(4);
-    root->left->right = newNode(5);
-
-    printTreeStructure(root, 0);
-
+    setlocale(LC_ALL, "Russian");
+    std::cout << "Создание корня дерева\n";
+    std::unique_ptr<Node> root = createNode();
+    std::cout << "Дерево до удаления:\n";
+    printTree(root);
+    deleteSubtree(root, 3);  // Удаление поддерева с ключом 3
+    std::cout << "Дерево после удаления:\n";
+    printTree(root);
     return 0;
 }
